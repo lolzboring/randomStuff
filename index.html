@@ -1,0 +1,124 @@
+<html>
+<head>
+	<title>JS cron</title>
+	<style type="text/css">
+		.interval { width: 50px; }
+		.url { width: 450px; }
+		textarea { width: 100%; }
+	</style>
+</head>
+<body>
+	<h2>Url interval call page</h2>
+	<hr>
+	<p>
+		Url : <input type="text" class="url" name="url_txt" autofocus="autofocus" value="http://localhost/wancai/sys/uf/check_track/infonal">
+		<select id="method">
+			<option value="GET">GET</option>
+			<option value="POST">POST</option>
+		</select>
+		interval (sec) : <input class="interval" type="number" name="interval" value="30"> <button id="add">Add</button></p>
+		<p id="param_row">
+			<!-- <small>ctrl + shift + "+" to add new params</small>
+			<p> param name: <input type="text" name="post_name[]"> param value: <input type="text" name="post_value[]"> </p>
+			<p> param name: <input type="text" name="post_name[]"> param value: <input type="text" name="post_value[]"> </p> -->
+		</p>
+	<hr>
+	<div id="list"></div>
+</body>
+
+<script type="text/javascript" src="./jquery.min.js"></script>
+<script>
+
+	var count = 1;
+
+	$('#add').click(function() {
+		addJob();
+	});
+
+	$('[name="url_txt"]').on('keyup', function(e) {
+		if (e.ctrlKey && e.keyCode == 13) {
+			addJob();
+		}
+	});
+
+	$('#method').change(function(){
+		if (this.value == "POST") {
+			if ($('#param_row > p').length == 0) {
+				addParam();
+			}
+			$('#param_row').css('display','initial');
+		}
+
+		if (this.value == "GET") {
+			$('#param_row').css('display','none');
+		}
+	});
+
+	$(document).on('keyup', function(e) {
+
+		if (e.ctrlKey && e.shiftKey && (e.keyCode == '107' || e.keyCode == '61')) {
+			addParam();
+		}
+	});
+
+	function addParam()
+	{
+		$('#param_row').append('<p> param name: <input type="text" name="post_name[]"> param value: <input type="text" name="post_value[]"> </p>');
+	}
+
+	function addJob() {
+
+		let url			= addHttp($('[name="url_txt"]').val());
+		let method		= $('#method').val();
+		let interval	= $('[name="interval"]').val();
+		let interValId	= setInterval(countdown, 1000, interval, url, method, count);
+
+		$('#list').append('<div id="container-'+count+'"><p>url '+count+' : <input type="text" class="url" disabled value="'+url+'"> interval (sec) : <input type="text" disabled class="interval" value="'+interval+'"> <button onclick="cancelinterval(\''+interValId+'\')">disable</button> called: <span id="called-'+count+'">0</span> countdown: <span id="countdown-'+count+'">0</span> </p><textarea id="url-'+count+'" disabled></textarea></div>');
+
+		count++;
+	}
+
+	function countdown(interval, url, method, count, params='')
+	{
+		time = parseInt($('#countdown-'+count).text());
+
+		if (--time < 0)
+		{
+			callAjax(url, method, count, params);
+			time = interval;
+		}
+
+		$('#countdown-'+count).text(time)
+	}
+
+	function callAjax(url, method, count, params='') {
+		$.ajax({
+			'type': method,
+			'url': url,
+			success: function(res) {
+				$('#url-'+count).html(res);
+				let calledCount = $('#called-'+count).text();
+				$('#called-'+count).text(parseInt(calledCount)+1);
+			}
+		});
+	}
+
+	function cancelinterval(id) {
+		clearInterval(id);
+	}
+
+	function addHttp(url) {
+		let isHttp = new RegExp('^http:\/\/|https:\/\/');
+		if (!isHttp.test(url)) {
+			let falseHttp = new RegExp('^[htps:\/]+\/');
+			url = url.replace(falseHttp, '');
+			url = 'http://'+url;
+		}
+
+		return url;
+	}
+
+	console.log(Math.ceil(Math.random() * 100));
+</script>
+
+</html>
